@@ -1,0 +1,7 @@
+# mobile gitignore
+mobile/node_modules
+mobile/android/local.properties
+mobile/android/.gradle
+mobile/android/app/build
+# other standard ignores
+.DS_Store

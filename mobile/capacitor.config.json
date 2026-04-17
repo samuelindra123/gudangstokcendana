@@ -1,0 +1,24 @@
+{
+  "appId": "com.cendana.gudangstok",
+  "appName": "Gudang Stok Cendana",
+  "webDir": "dist",
+  "server": {
+    "url": "https://gudangstokcendana.vercel.app/",
+    "errorPath": "offline.html",
+    "allowNavigation": [
+      "gudangstokcendana.vercel.app",
+      "cloud.appwrite.io"
+    ]
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 3000,
+      "launchAutoHide": true,
+      "backgroundColor": "#171717",
+      "showSpinner": true,
+      "spinnerColor": "#ffffff",
+      "splashFullScreen": true,
+      "splashImmersive": true
+    }
+  }
+}
