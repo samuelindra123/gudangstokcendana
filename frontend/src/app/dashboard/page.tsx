@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { databases, DATABASE_ID, WORKSPACES_COLLECTION_ID, LOGS_COLLECTION_ID, ITEMS_COLLECTION_ID, account, ID } from '@/lib/appwrite';
+import { databases, DATABASE_ID, WORKSPACES_COLLECTION_ID, LOGS_COLLECTION_ID, ITEMS_COLLECTION_ID, account, ID, Query } from '@/lib/appwrite';
 import Link from 'next/link';
 import { Plus, FolderOpen, X, BarChart3, Package, Archive } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -26,11 +26,15 @@ export default function DashboardOverview() {
         setUser(u);
 
         // Fetch Workspaces
-        const wsRes = await databases.listDocuments(DATABASE_ID, WORKSPACES_COLLECTION_ID);
+        const wsRes = await databases.listDocuments(DATABASE_ID, WORKSPACES_COLLECTION_ID, [
+          Query.limit(100)
+        ]);
         setWorkspaces(wsRes.documents);
 
         // Fetch Items for Analytics
-        const itemsRes = await databases.listDocuments(DATABASE_ID, ITEMS_COLLECTION_ID);
+        const itemsRes = await databases.listDocuments(DATABASE_ID, ITEMS_COLLECTION_ID, [
+          Query.limit(5000)
+        ]);
         setItems(itemsRes.documents);
       } catch (err) {
         console.error(err);

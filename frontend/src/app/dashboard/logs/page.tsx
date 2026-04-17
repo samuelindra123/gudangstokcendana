@@ -17,7 +17,7 @@ export default function LogsPage() {
         // Fetch Logs - Get more for the dedicated page
         const lgRes = await databases.listDocuments(DATABASE_ID, LOGS_COLLECTION_ID, [
             Query.orderDesc('$createdAt'),
-            Query.limit(50)
+            Query.limit(500)
         ]);
         setLogs(lgRes.documents);
       } catch (err) {

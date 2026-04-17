@@ -112,7 +112,8 @@ export default function WorkspaceDetail() {
         await account.get(); // Pastikan user login
         const res = await databases.listDocuments(DATABASE_ID, ITEMS_COLLECTION_ID, [
           Query.equal('workspaceId', workspaceId),
-          Query.orderDesc('$createdAt')
+          Query.orderDesc('$createdAt'),
+          Query.limit(5000)
         ]);
         setItems(res.documents as unknown as Item[]);
       } catch (err: any) {
