@@ -4,12 +4,21 @@ import { account } from "@/lib/appwrite";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { OAuthProvider } from "appwrite";
+import Link from "next/link";
+import { Smartphone } from "lucide-react";
 
 export default function Login() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
+  const [isNativeApp, setIsNativeApp] = useState(false);
 
   useEffect(() => {
+    // Detect if we are inside the Capacitor Mobile App
+    if (typeof window !== "undefined") {
+      const isCapacitor = (window as any).Capacitor !== undefined || navigator.userAgent.includes("Capacitor");
+      setIsNativeApp(isCapacitor);
+    }
+
     // Check if user is already logged in
     async function checkSession() {
       try {
@@ -56,7 +65,7 @@ export default function Login() {
             </p>
           </div>
 
-          <div className="w-full pt-4">
+          <div className="w-full pt-4 space-y-4">
             <button
               type="button"
               onClick={loginWithGoogle}
@@ -70,6 +79,19 @@ export default function Login() {
               </svg>
               Continue with Google
             </button>
+
+            {/* Always rendered, but hidden based on state so no flash of content initially */}
+            {!isNativeApp && (
+              <div className="pt-2 animate-in fade-in duration-700">
+                <Link
+                  href="/download"
+                  className="flex items-center justify-center gap-2 text-sm text-zinc-400 font-medium hover:text-white transition-colors"
+                >
+                  <Smartphone className="h-4 w-4" />
+                  Unduh Aplikasi Mobile
+                </Link>
+              </div>
+            )}
           </div>
         </div>
 
