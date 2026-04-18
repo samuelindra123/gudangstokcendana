@@ -3,16 +3,21 @@
 import { useEffect, useState } from 'react';
 import { databases, DATABASE_ID, WORKSPACES_COLLECTION_ID, LOGS_COLLECTION_ID, ITEMS_COLLECTION_ID, account, ID, Query } from '@/lib/appwrite';
 import Link from 'next/link';
-import { Plus, FolderOpen, X, BarChart3, Package, Archive } from 'lucide-react';
+import { Plus, FolderOpen, X, BarChart3, Package, Archive, TrendingUp, AlertCircle, Zap } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
+import { StatsCard, RecentActivityItem, SearchFilter, LoadingSkeleton, EmptyState } from '@/components/dashboard/DashboardComponents';
+import { ExportButton } from '@/lib/export';
 
 export default function DashboardOverview() {
   const router = useRouter();
   const [workspaces, setWorkspaces] = useState<any[]>([]);
   const [items, setItems] = useState<any[]>([]);
+  const [logs, setLogs] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredWorkspaces, setFilteredWorkspaces] = useState<any[]>([]);
   
   // Custom Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -30,12 +35,20 @@ export default function DashboardOverview() {
           Query.limit(100)
         ]);
         setWorkspaces(wsRes.documents);
+        setFilteredWorkspaces(wsRes.documents);
 
         // Fetch Items for Analytics
         const itemsRes = await databases.listDocuments(DATABASE_ID, ITEMS_COLLECTION_ID, [
           Query.limit(5000)
         ]);
         setItems(itemsRes.documents);
+
+        // Fetch Recent Logs
+        const logsRes = await databases.listDocuments(DATABASE_ID, LOGS_COLLECTION_ID, [
+          Query.orderDesc('$createdAt'),
+          Query.limit(10)
+        ]);
+        setLogs(logsRes.documents);
       } catch (err) {
         console.error(err);
         router.push('/');
@@ -45,6 +58,14 @@ export default function DashboardOverview() {
     }
     loadData();
   }, [router]);
+
+  // Filter workspaces by search term
+  useEffect(() => {
+    const filtered = workspaces.filter(ws =>
+      ws.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredWorkspaces(filtered);
+  }, [searchTerm, workspaces]);
 
   const handleCreateWorkspace = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,42 +120,34 @@ export default function DashboardOverview() {
           <h1 className="text-3xl font-bold tracking-tight text-white mb-1">Welcome back, {user?.name || "..."}</h1>
           <p className="text-zinc-400">Manage your stock workspaces and analytics.</p>
         </div>
-        <button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-md font-medium transition-colors text-sm shadow-lg shadow-indigo-500/20">
-          <Plus className="h-4 w-4" />
-          New Workspace
-        </button>
       </header>
 
-      {/* Analytics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white/5 border border-white/10 rounded-xl p-5 shadow-xl">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-zinc-400">Total Workspaces</h3>
-            <FolderOpen className="h-5 w-5 text-indigo-400" />
-          </div>
-          <p className="text-2xl font-bold text-white mt-4">{workspaces.length}</p>
-        </div>
-        <div className="bg-white/5 border border-white/10 rounded-xl p-5 shadow-xl">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-zinc-400">Total Jenis Barang</h3>
-            <Package className="h-5 w-5 text-emerald-400" />
-          </div>
-          <p className="text-2xl font-bold text-white mt-4">{isLoadingStats ? '...' : totalItems}</p>
-        </div>
-        <div className="bg-white/5 border border-white/10 rounded-xl p-5 shadow-xl">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-zinc-400">Total Stok Tersedia</h3>
-            <Archive className="h-5 w-5 text-amber-400" />
-          </div>
-          <p className="text-2xl font-bold text-white mt-4">{isLoadingStats ? '...' : totalQuantity.toLocaleString()}</p>
-        </div>
-        <div className="bg-white/5 border border-white/10 rounded-xl p-5 shadow-xl">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-zinc-400">Barang Stok Menipis (≤10)</h3>
-            <BarChart3 className="h-5 w-5 text-red-400" />
-          </div>
-          <p className="text-2xl font-bold text-white mt-4">{isLoadingStats ? '...' : lowStockItems}</p>
-        </div>
+      {/* Analytics Cards - Enhanced with Stats Components */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatsCard
+          title="Total Workspaces"
+          value={workspaces.length}
+          icon={<FolderOpen className="h-5 w-5" />}
+          color="blue"
+        />
+        <StatsCard
+          title="Total Jenis Barang"
+          value={isLoadingStats ? '...' : totalItems}
+          icon={<Package className="h-5 w-5" />}
+          color="emerald"
+        />
+        <StatsCard
+          title="Total Stok Tersedia"
+          value={isLoadingStats ? '...' : totalQuantity.toLocaleString()}
+          icon={<Archive className="h-5 w-5" />}
+          color="amber"
+        />
+        <StatsCard
+          title="Stok Rendah (≤10)"
+          value={isLoadingStats ? '...' : lowStockItems}
+          icon={<AlertCircle className="h-5 w-5" />}
+          color="rose"
+        />
       </div>
 
       {/* Analytics Charts */}
@@ -191,23 +204,109 @@ export default function DashboardOverview() {
         </div>
       )}
 
+      {/* Recent Activities Section */}
+      {logs.length > 0 && !isLoadingStats && (
+        <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-6 backdrop-blur-xl">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold text-white">Recent Activities</h3>
+              <p className="text-xs text-zinc-500 mt-1">Latest {Math.min(logs.length, 10)} changes</p>
+            </div>
+            <Zap className="h-5 w-5 text-amber-400/50" />
+          </div>
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {logs.slice(0, 10).map((log, idx) => (
+              <RecentActivityItem
+                key={idx}
+                userName={log.userName || 'Unknown'}
+                action={log.action || 'Modified'}
+                itemName={log.itemName || 'Item'}
+                details={log.details || ''}
+                timestamp={new Date(log.$createdAt).toLocaleTimeString('id-ID')}
+                badge={
+                  log.action?.toLowerCase().includes('increment') ? 'increment' :
+                  log.action?.toLowerCase().includes('decrement') ? 'decrement' :
+                  log.action?.toLowerCase().includes('edit') ? 'edit' : 'create'
+                }
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Workspaces Section with Search & Export */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
+          <div className="w-full sm:w-64">
+            <SearchFilter
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              placeholder="Cari workspace..."
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            {filteredWorkspaces.length > 0 && (
+              <ExportButton
+                items={filteredWorkspaces}
+                filename="workspaces"
+                label="Export Workspaces"
+              />
+            )}
+            <button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm shadow-lg shadow-indigo-500/20">
+              <Plus className="h-4 w-4" />
+              New Workspace
+            </button>
+          </div>
+        </div>
+
+        {/* Workspaces Grid */}
+        {filteredWorkspaces.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {filteredWorkspaces.map(ws => {
+              const wsItems = items.filter(i => i.workspaceId === ws.$id);
+              const lowStockCount = wsItems.filter(i => i.quantity <= 10).length;
+              
+              return (
+                <Link key={ws.$id} href={`/dashboard/workspace/${ws.$id}`} className="group relative overflow-hidden p-5 rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/20 transition-all shadow-lg">
+                  <div className="absolute top-0 right-0 w-20 h-20 bg-indigo-500/5 rounded-full -mr-10 -mt-10 group-hover:bg-indigo-500/10 transition-colors" />
+                  
+                  <FolderOpen className="h-6 w-6 text-indigo-400 mb-3 group-hover:text-indigo-300 transition-colors relative z-10" />
+                  
+                  <h3 className="font-semibold text-white group-hover:text-indigo-100 mb-2 relative z-10">{ws.name}</h3>
+                  
+                  <div className="space-y-2 text-xs relative z-10">
+                    <div className="flex items-center justify-between text-zinc-400">
+                      <span>Items:</span>
+                      <span className="text-white font-medium">{wsItems.length}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-zinc-400">
+                      <span>Total Stock:</span>
+                      <span className="text-white font-medium">{wsItems.reduce((a, c) => a + (c.quantity || 0), 0)}</span>
+                    </div>
+                    {lowStockCount > 0 && (
+                      <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/5 text-amber-400">
+                        <AlertCircle className="h-3 w-3" />
+                        <span>{lowStockCount} low stock</span>
+                      </div>
+                    )}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        ) : (
+          <EmptyState
+            icon={<FolderOpen className="h-10 w-10" />}
+            title={searchTerm ? "No workspaces found" : "No workspaces yet"}
+            description={searchTerm ? `Try searching with different keywords` : "Create your first workspace to get started"}
+            action={!searchTerm ? { label: 'Create Workspace', onClick: () => setIsModalOpen(true) } : undefined}
+          />
+        )}
+      </div>
+
       <div className="grid grid-cols-1">
         <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {workspaces.map(ws => (
-              <Link key={ws.$id} href={`/dashboard/workspace/${ws.$id}`} className="group p-6 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 transition-all flex flex-col gap-4 shadow-xl shadow-black/50">
-                <FolderOpen className="h-8 w-8 text-indigo-400 group-hover:text-indigo-300 transition-colors" />
-                <div>
-                  <h3 className="font-semibold text-white group-hover:text-indigo-100">{ws.name}</h3>
-                  <p className="text-sm text-zinc-500 mt-1">Manage items</p>
-                </div>
-              </Link>
-            ))}
-            {workspaces.length === 0 && (
-                <div className="col-span-full py-12 text-center text-sm text-zinc-500 border border-dashed border-white/10 rounded-xl">
-                    No workspaces yet. Create one to get started.
-                </div>
-            )}
           </div>
         </div>
       </div>
