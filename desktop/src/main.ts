@@ -37,7 +37,7 @@ const createWindow = () => {
 
   const startURL = isDev
     ? 'http://localhost:3000'
-    : `file://${path.join(appPath, 'build', 'index.html')}`;
+    : 'https://gudangstokcendana.vercel.app/';
 
   mainWindow.loadURL(startURL).catch((err) => {
     console.error('Failed to load URL:', err);
