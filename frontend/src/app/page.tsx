@@ -88,7 +88,7 @@ export default function Login() {
                   className="flex items-center justify-center gap-2 text-sm text-zinc-400 font-medium hover:text-white transition-colors"
                 >
                   <Smartphone className="h-4 w-4" />
-                  Unduh Aplikasi Mobile
+                  Unduh Aplikasi Mobile & Desktop
                 </Link>
               </div>
             )}

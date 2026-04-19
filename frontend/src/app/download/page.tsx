@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Download, Package, AlertCircle, CheckCircle, Loader, Smartphone, Monitor } from 'lucide-react';
+import { Download, Package, AlertCircle, CheckCircle, Loader, Smartphone, Monitor, ChevronLeft } from 'lucide-react';
 
 interface Release {
   version: string;
@@ -74,30 +74,37 @@ export default function DownloadApp() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      <div className="max-w-5xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    <div className="relative min-h-screen bg-black font-sans text-white selection:bg-white/30">
+      {/* Premium subtle background glow effect */}
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-indigo-500/10 blur-[150px] rounded-full pointer-events-none" />
+
+      <div className="relative max-w-4xl mx-auto py-12 px-6 sm:px-8 z-10">
         {/* Header */}
-        <Link href="/" className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-700 mb-8">
-          ← Kembali
+        <Link 
+          href="/" 
+          className="inline-flex items-center gap-2 text-sm font-medium text-zinc-400 hover:text-white transition-colors mb-10 group"
+        >
+          <ChevronLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+          Kembali ke Login
         </Link>
 
-        <div className="mb-10">
-          <h1 className="text-4xl font-bold text-gray-900 mb-3">
-            Unduh Gudang Stok Cendana
+        <div className="mb-12 text-center sm:text-left">
+          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-white mb-4">
+            Unduh Aplikasi
           </h1>
-          <p className="text-lg text-gray-600">
-            Pilih versi yang sesuai dengan perangkat Anda
+          <p className="text-lg text-zinc-400 max-w-2xl">
+            Pilih platform yang sesuai dengan perangkat Anda untuk pengalaman manajemen stok terbaik.
           </p>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex gap-4 mb-8 border-b border-gray-200">
+        <div className="flex flex-col sm:flex-row gap-2 mb-8 bg-white/5 p-1.5 rounded-xl border border-white/10 backdrop-blur-md">
           <button
             onClick={() => setActiveTab('desktop')}
-            className={`flex items-center gap-2 px-6 py-3 font-semibold transition-colors ${
+            className={`flex-1 flex items-center justify-center gap-3 px-6 py-3.5 rounded-lg font-medium transition-all ${
               activeTab === 'desktop'
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-white/10 text-white shadow-sm border border-white/10'
+                : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'
             }`}
           >
             <Monitor className="w-5 h-5" />
@@ -105,10 +112,10 @@ export default function DownloadApp() {
           </button>
           <button
             onClick={() => setActiveTab('mobile')}
-            className={`flex items-center gap-2 px-6 py-3 font-semibold transition-colors ${
+            className={`flex-1 flex items-center justify-center gap-3 px-6 py-3.5 rounded-lg font-medium transition-all ${
               activeTab === 'mobile'
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-white/10 text-white shadow-sm border border-white/10'
+                : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/5'
             }`}
           >
             <Smartphone className="w-5 h-5" />
@@ -116,241 +123,189 @@ export default function DownloadApp() {
           </button>
         </div>
 
-        {/* Desktop Section */}
-        {activeTab === 'desktop' && (
-          <div className="space-y-8">
-            {/* System Requirements */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-              <div className="flex gap-3 mb-4">
-                <CheckCircle className="w-6 h-6 text-blue-600 flex-shrink-0" />
-                <h3 className="font-semibold text-blue-900 text-lg">Persyaratan Sistem</h3>
-              </div>
-              <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-800">
-                <li className="flex gap-2">
-                  <span className="font-semibold min-w-24">OS:</span>
-                  <span>Windows 10, Windows 11 (64-bit)</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="font-semibold min-w-24">RAM:</span>
-                  <span>Minimum 2GB</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="font-semibold min-w-24">Storage:</span>
-                  <span>Minimum 100MB free space</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="font-semibold min-w-24">Internet:</span>
-                  <span>Untuk auto-update</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Error State */}
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-6 flex gap-3">
-                <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0" />
-                <div>
-                  <h3 className="font-semibold text-red-900 mb-1">Error</h3>
-                  <p className="text-red-800 text-sm">{error}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Loading State */}
-            {loading && (
-              <div className="flex flex-col items-center justify-center py-12">
-                <Loader className="w-12 h-12 text-blue-600 animate-spin mb-4" />
-                <p className="text-gray-600">Memuat versi terbaru...</p>
-              </div>
-            )}
-
-            {/* Latest Release */}
-            {!loading && !error && latest && (
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-lg p-8">
-                <div className="flex items-start justify-between mb-6">
+        {/* Content Area */}
+        <div className="space-y-6">
+          {/* Desktop Section */}
+          {activeTab === 'desktop' && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-6 flex gap-4 items-start">
+                  <AlertCircle className="w-6 h-6 text-red-400 flex-shrink-0 mt-0.5" />
                   <div>
-                    <div className="inline-block bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold mb-3">
-                      VERSI TERBARU
-                    </div>
-                    <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                      v{latest.version}
-                    </h2>
-                    <p className="text-gray-600">
-                      Rilis: {formatDate(latest.publishedAt)}
-                    </p>
+                    <h3 className="font-medium text-red-200 mb-1">Terjadi Kesalahan</h3>
+                    <p className="text-red-300/80 text-sm">{error}</p>
                   </div>
-                  <Package className="w-12 h-12 text-green-600" />
                 </div>
+              )}
 
-                <div className="bg-white rounded-lg p-4 mb-6">
-                  <p className="text-gray-700 whitespace-pre-wrap text-sm">
-                    {latest.description || 'Tidak ada deskripsi tersedia'}
-                  </p>
+              {loading && (
+                <div className="border border-white/10 bg-white/5 rounded-xl p-12 flex flex-col items-center justify-center backdrop-blur-sm">
+                  <Loader className="w-10 h-10 text-indigo-400 animate-spin mb-4" />
+                  <p className="text-zinc-400 font-medium">Memeriksa versi Windows terbaru...</p>
                 </div>
+              )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {latest.downloadUrl && (
-                    <a
-                      href={latest.downloadUrl}
-                      className="inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-                    >
-                      <Download className="w-5 h-5" />
-                      <span>Installer (Recommended)</span>
-                    </a>
-                  )}
-                  {latest.portableUrl && (
-                    <a
-                      href={latest.portableUrl}
-                      className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-                    >
-                      <Download className="w-5 h-5" />
-                      <span>Portable Version</span>
-                    </a>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Installation Instructions */}
-            {!loading && !error && (
-              <div className="bg-gray-100 rounded-lg p-8">
-                <h3 className="text-xl font-bold text-gray-900 mb-6">
-                  📝 Cara Instalasi
-                </h3>
-                <div className="space-y-6">
-                  {[
-                    {
-                      num: 1,
-                      title: 'Unduh File',
-                      desc: 'Klik tombol "Installer" di atas untuk mengunduh aplikasi',
-                    },
-                    {
-                      num: 2,
-                      title: 'Jalankan Installer',
-                      desc: 'Double-click file .exe yang telah diunduh untuk memulai instalasi',
-                    },
-                    {
-                      num: 3,
-                      title: 'Ikuti Petunjuk',
-                      desc: 'Pilih folder instalasi dan tunggu hingga instalasi selesai',
-                    },
-                    {
-                      num: 4,
-                      title: 'Buka Aplikasi',
-                      desc: 'Cari aplikasi di Start Menu atau gunakan Desktop Shortcut',
-                    },
-                  ].map((step) => (
-                    <div key={step.num} className="flex gap-4">
-                      <div className="flex-shrink-0">
-                        <div className="flex items-center justify-center h-8 w-8 rounded-full bg-blue-600 text-white font-semibold">
-                          {step.num}
-                        </div>
-                      </div>
+              {!loading && !error && latest && (
+                <div className="border border-indigo-500/30 bg-indigo-500/5 rounded-2xl p-6 sm:p-8 backdrop-blur-sm relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 blur-[80px] rounded-full pointer-events-none" />
+                  
+                  <div className="relative z-10">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8 border-b border-indigo-500/20 pb-8">
                       <div>
-                        <h4 className="font-semibold text-gray-900">{step.title}</h4>
-                        <p className="text-gray-700 text-sm mt-1">{step.desc}</p>
+                        <div className="inline-flex items-center gap-2 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-3 py-1 rounded-full text-xs font-semibold mb-4 tracking-wide">
+                          <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span>
+                          VERSI TERBARU
+                        </div>
+                        <h2 className="text-3xl font-bold text-white mb-2">
+                          Gudang Stok v{latest.version}
+                        </h2>
+                        <p className="text-zinc-400 text-sm">
+                          Diterbitkan pada {formatDate(latest.publishedAt)}
+                        </p>
                       </div>
+                      <Package className="w-16 h-16 text-indigo-400/50 hidden sm:block" />
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
-            {/* Portable Version Info */}
-            {!loading && !error && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                <h4 className="font-semibold text-blue-900 mb-3">💾 Versi Portable</h4>
-                <p className="text-blue-800 text-sm mb-3">
-                  Versi portable dapat dijalankan langsung tanpa instalasi. Cocok untuk:
-                </p>
-                <ul className="text-blue-800 text-sm space-y-1 ml-4">
-                  <li>✓ Menjalankan dari USB drive</li>
-                  <li>✓ Tidak perlu hak akses administrator</li>
-                  <li>✓ Instalasi otomatis tanpa perlu wizard</li>
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
+                    {latest.description && (
+                      <div className="bg-black/40 border border-white/10 rounded-xl p-4 mb-8">
+                        <p className="text-zinc-300 whitespace-pre-wrap text-sm leading-relaxed">
+                          {latest.description}
+                        </p>
+                      </div>
+                    )}
 
-        {/* Mobile Section */}
-        {activeTab === 'mobile' && (
-          <div className="space-y-8">
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg p-8">
-              <div className="flex items-start justify-between mb-6">
-                <div>
-                  <div className="inline-block bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-semibold mb-3">
-                    APLIKASI MOBILE
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      {latest.downloadUrl && (
+                        <a
+                          href={latest.downloadUrl}
+                          className="flex-1 group relative flex items-center justify-center gap-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 py-4 px-6 font-medium text-white transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50 active:scale-[0.98] overflow-hidden"
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
+                          <Download className="w-5 h-5 flex-shrink-0" />
+                          <span>Unduh Installer .exe</span>
+                        </a>
+                      )}
+                    </div>
                   </div>
-                  <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                    Aplikasi Android
-                  </h2>
-                  <p className="text-gray-600">
-                    Akses langsung dari smartphone Anda
-                  </p>
                 </div>
-                <Smartphone className="w-12 h-12 text-blue-600" />
-              </div>
+              )}
 
-              <div className="bg-white rounded-lg p-4 mb-6">
-                <p className="text-gray-700 text-sm">
-                  Unduh aplikasi Android untuk akses kamera langsung, tampilan offline, dan pengalaman yang lebih mulus di smartphone Anda.
-                </p>
-              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                <div className="border border-white/10 bg-white/[0.03] rounded-xl p-6 backdrop-blur-sm">
+                  <div className="flex gap-3 mb-4 items-center border-b border-white/10 pb-4">
+                    <CheckCircle className="w-5 h-5 text-indigo-400" />
+                    <h3 className="font-medium text-zinc-100">Persyaratan Windows</h3>
+                  </div>
+                  <ul className="space-y-3 text-sm text-zinc-400">
+                    <li className="flex justify-between items-center">
+                      <span className="text-zinc-500">OS</span>
+                      <span className="text-zinc-200">Windows 10 / 11 (64-bit)</span>
+                    </li>
+                    <li className="flex justify-between items-center">
+                      <span className="text-zinc-500">Memori</span>
+                      <span className="text-zinc-200">Minimal 2GB RAM</span>
+                    </li>
+                    <li className="flex justify-between items-center">
+                      <span className="text-zinc-500">Penyimpanan</span>
+                      <span className="text-zinc-200">100MB tersedia</span>
+                    </li>
+                  </ul>
+                </div>
 
-              <a
-                href="/app-debug.apk"
-                download
-                className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors w-full md:w-auto"
-              >
-                <Download className="w-5 h-5" />
-                <span>Download APK (Android)</span>
-              </a>
-            </div>
-
-            <div className="bg-gray-100 rounded-lg p-8">
-              <h3 className="text-xl font-bold text-gray-900 mb-6">
-                📝 Cara Instalasi
-              </h3>
-              <div className="space-y-6">
-                {[
-                  {
-                    num: 1,
-                    title: 'Unduh APK',
-                    desc: 'Klik tombol "Download APK" di atas untuk mengunduh file instalasi',
-                  },
-                  {
-                    num: 2,
-                    title: 'Izinkan Sumber Tidak Dikenal',
-                    desc: 'Buka Settings > Security dan aktifkan "Unknown Sources"',
-                  },
-                  {
-                    num: 3,
-                    title: 'Buka File',
-                    desc: 'Buka file APK yang telah diunduh untuk memulai instalasi',
-                  },
-                  {
-                    num: 4,
-                    title: 'Selesai',
-                    desc: 'Tunggu instalasi selesai dan buka aplikasi dari home screen',
-                  },
-                ].map((step) => (
-                  <div key={step.num} className="flex gap-4">
-                    <div className="flex-shrink-0">
-                      <div className="flex items-center justify-center h-8 w-8 rounded-full bg-blue-600 text-white font-semibold">
-                        {step.num}
+                <div className="border border-white/10 bg-white/[0.03] rounded-xl p-6 backdrop-blur-sm">
+                  <h3 className="font-medium text-zinc-100 mb-4 border-b border-white/10 pb-4">Cara Pemasangan</h3>
+                  <div className="space-y-4 text-sm">
+                    {[
+                      { step: 1, text: 'Unduh file .exe dari tombol di atas.' },
+                      { step: 2, text: 'Buka file installer yang sudah didownload.' },
+                      { step: 3, text: 'Ikuti petunjuk di layar (Next > Install).' },
+                      { step: 4, text: 'Buka aplikasi dari shortcut Desktop.' },
+                    ].map((s) => (
+                      <div key={s.step} className="flex gap-3 items-start">
+                        <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-white/10 text-xs font-medium text-zinc-300 mt-0.5">
+                          {s.step}
+                        </span>
+                        <span className="text-zinc-400">{s.text}</span>
                       </div>
-                    </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Mobile Section */}
+          {activeTab === 'mobile' && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
+              <div className="border border-blue-500/30 bg-blue-500/5 rounded-2xl p-6 sm:p-8 backdrop-blur-sm relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 blur-[80px] rounded-full pointer-events-none" />
+                
+                <div className="relative z-10">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8 border-b border-blue-500/20 pb-8">
                     <div>
-                      <h4 className="font-semibold text-gray-900">{step.title}</h4>
-                      <p className="text-gray-700 text-sm mt-1">{step.desc}</p>
+                      <div className="inline-flex items-center gap-2 bg-blue-500/20 text-blue-300 border border-blue-500/30 px-3 py-1 rounded-full text-xs font-semibold mb-4 tracking-wide">
+                        ANDROID APK
+                      </div>
+                      <h2 className="text-3xl font-bold text-white mb-2">
+                        Gudang Stok Mobile
+                      </h2>
+                      <p className="text-zinc-400 text-sm">
+                        Akses gudang di mana saja, fitur scan barcode kamera langsung.
+                      </p>
                     </div>
+                    <Smartphone className="w-16 h-16 text-blue-400/50 hidden sm:block" />
                   </div>
-                ))}
+
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <a
+                      href="/app-debug.apk"
+                      download
+                      className="flex-1 group relative flex items-center justify-center gap-3 rounded-xl bg-blue-600 hover:bg-blue-500 py-4 px-6 font-medium text-white transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/50 active:scale-[0.98] overflow-hidden"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
+                      <Download className="w-5 h-5 flex-shrink-0" />
+                      <span>Unduh APK Android</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                <div className="border border-white/10 bg-white/[0.03] rounded-xl p-6 backdrop-blur-sm">
+                  <h3 className="font-medium text-zinc-100 mb-4 border-b border-white/10 pb-4">Cara Pemasangan APK</h3>
+                  <div className="space-y-4 text-sm">
+                    {[
+                      { step: 1, text: 'Ketuk tombol Unduh APK Android di atas.' },
+                      { step: 2, text: 'Buka Settings > Security di HP Anda.' },
+                      { step: 3, text: 'Aktifkan izin instalasi "Unknown Sources".' },
+                      { step: 4, text: 'Buka file .apk dan ketuk Install.' },
+                    ].map((s) => (
+                      <div key={s.step} className="flex gap-3 items-start">
+                        <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-white/10 text-xs font-medium text-zinc-300 mt-0.5">
+                          {s.step}
+                        </span>
+                        <span className="text-zinc-400">{s.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="border border-white/10 bg-white/[0.03] rounded-xl p-6 backdrop-blur-sm">
+                   <div className="flex gap-3 mb-4 items-center border-b border-white/10 pb-4">
+                    <CheckCircle className="w-5 h-5 text-blue-400" />
+                    <h3 className="font-medium text-zinc-100">Kelebihan Versi Mobile</h3>
+                  </div>
+                  <ul className="space-y-3 text-sm text-zinc-400 list-disc ml-4">
+                    <li>Optimalisasi penyimpanan di cache lokal.</li>
+                    <li>Scan QR/Barcode menggunakan kamera bawaan Android.</li>
+                    <li>Tampilan antarmuka yang sangat responsif.</li>
+                    <li>Notifikasi lokal.</li>
+                  </ul>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
