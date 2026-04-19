@@ -106,24 +106,26 @@ ${dbContext}
 Tugas Anda:
 1. Membaca pesan user.
 2. Memutuskan apakah harus MEMBUAT WORKSPACE BARU, MENAMBAH BARANG BARU, MENGUBAH STOK BARANG, atau HANYA MENJAWAB INFO/TANYA JAWAB.
-3. JANGAN berasumsi ID! Cari persis dari daftar di atas. Jika user tidak menyebutkan target workspace, minta konfirmasi.
-4. JIKA USER INGIN MENAMBAHKAN BARANG ACAK BEBAS SEBANYAK X ITEM (misal untuk demo), silakan buat datanya dan masukkan ke target workspace yg diminta user menggunakan perintah new_item berulang di array actions.
+3. JANGAN berasumsi ID! Cari persis dari daftar di atas. Jika user tidak menyebutkan target workspace, MINTA konfirmasi dulu sebelum melakukan instruksi menambah barang.
+4. JIKA USER INGIN MENAMBAHKAN BARANG ACAK BEBAS SEBANYAK X ITEM, silakan buat datanya dan masukkan ke target workspace yg diminta user menggunakan array JSON "new_item" berulang.
 
-PERINGATAN OUTPUT FORMAT:
-OUTPUT HARUS VALID JSON SAJA! JANGAN ADA TEKS LAIN SEBELUM DAN SESUDAH JSON.
-JANGAN MENGGUNAKAN NEWLINE/ENTER (RAW NEWLINE) DIDALAM STRING JSON, gunakan escape \\n untuk pindah baris pada tulisan string JSON (e.g. "Berikut baris ke satu\\nBaris ke dua").
-JANGAN MENGGUNAKAN TRAILING COMMA DI ARRAY ATAU OBJECT! HARUS VALID JSON.
+FORMAT BALASAN ANDA (SANGAT PENTING):
+1. TEKS BIASA (Markdown): Tuliskan pesan ramah, detail, dan rapi untuk pengguna sebagai bagian awal balasan Anda! Gunakan Bullet point, Bold, dsb sesuka Anda.
+2. BLOK KODE JSON AKSI (Wajib di akhir pesan, JIKA dan HANYA JIKA Anda melakukan mutasi database / menambah/mengubah stok). Format mutasi berupa ARRAY dari aksi yang ingin dilakukan.
 
-Struktur WAJIB JSON:
-{
-  "reply": "Respons ramah ke user secara detail dan lengkap (Anda bisa menggunakan *bold*, \`code\`, dll). Jika butuh konfirmasi, tanyakan di sini lalu array actions KOSONG.",
-  "actions": [
-    { "type": "new_workspace", "name": "Gudang Utama" },
-    { "type": "new_item", "workspaceId": "id_workspace_didapat_dari_daftar", "name": "Beras Kuning", "qty": 10, "unit": "kg" },
-    { "type": "adjust_stock", "id": "id_barang_dari_tabel_items", "diff": 5, "name": "Beras Kuning" }
-  ]
-}
-`;
+Contoh Struktur Balasan Anda yang SEMPURNA:
+Halo kak! 👋 Selamat datang di **Gudang Stok Cendana**!
+Saya sudah membuatkan workspace baru dan menambah barang ke dalamnya. Silakan di cek!
+
+\`\`\`json
+[
+  { "type": "new_workspace", "name": "Gudang Rahasia" },
+  { "type": "new_item", "workspaceId": "id_workspace_didapat_dari_daftar", "name": "Sensor DHT22", "qty": 10, "unit": "pcs" },
+  { "type": "adjust_stock", "id": "id_barang_dari_tabel_items", "diff": 5, "name": "Beras Kuning" }
+]
+\`\`\`
+JANGAN meletakkan pesan balasan ke dalam JSON. Pesan ditujukan kepada user harus DI LUAR blok JSON tsb!
+Jika Anda HANYA menjawab/memberi info dan TIDAK ADA perintah perubahan mutasi, JANGAN TULIS BLOK KODE JSON SAMA SEKALI. Tulis saja teksnya.`;
 
       const apiMessages = [
         { role: 'system', content: systemPrompt },
@@ -132,39 +134,29 @@ Struktur WAJIB JSON:
       ];
 
       const res = await askAI(apiMessages);
-      let jsonText = res.content.trim();
+      let fullContent = res.content.trim();
       
-      // Strict extraction of JSON chunk
-      const firstBrace = jsonText.indexOf('{');
-      const lastBrace = jsonText.lastIndexOf('}');
-      if (firstBrace !== -1 && lastBrace !== -1) {
-          jsonText = jsonText.substring(firstBrace, lastBrace + 1);
+      let aiReply = fullContent;
+      let parsedActions: any[] = [];
+      const jsonBlockRegex = /```json\s*([\s\S]*?)```/;
+      const match = fullContent.match(jsonBlockRegex);
+      
+      if (match && match[1]) {
+          try {
+              parsedActions = JSON.parse(match[1]);
+              aiReply = fullContent.replace(jsonBlockRegex, '').trim();
+          } catch(e) {
+              console.error('Invalid JSON block in AI reply:', match[1]);
+              aiReply = fullContent.replace(jsonBlockRegex, '').trim() + '\n\n*(Catatan: Blok JSON tindakan gagal dieksekusi karena format AI salah)*';
+          }
       }
       
-      // Strip raw newlines inside the JSON structure that can break JSON.parse
-      // using regex to target newline inside quotes is hard, so we just replace \n and \r
-      // Note: we replace actual newline literals, not the escaped ones.
-      jsonText = jsonText.replace(/\n/g, '\\n').replace(/\r/g, '');
-      // fix double escaped due to the above
-      jsonText = jsonText.replace(/\\\\n/g, '\\n');
-
-      let parsed: any = { reply: 'Terjadi kesalahan internal AI.', actions: [] };
-      try {
-          parsed = JSON.parse(jsonText);
-      } catch(e) {
-          console.error('Invalid JSON from AI:', res.content);
-          // Fallback gracefully without showing horrible json raw text
-          parsed.reply = res.content.replace(/\}?\s*\]?\s*\}?$/, '').replace(/\{/g, '').replace(/"reply":\s?/g, '').replace(/"actions":.*/g, ''); 
-          if(parsed.reply.length > 500) parsed.reply = "Maaf kak, data sukses terkirim tapi saya tidak bisa menampilkan laporan chat karena teks kepanjangan dari server.";
-      }
-      
-      let aiReply = parsed.reply;
       let workspacesList = [...workspacesInfo];
       let itemsList = [...itemsInfo];
       let executedActions: ActionLog[] = [];
 
-      if (parsed.actions && parsed.actions.length > 0) {
-        for (const action of parsed.actions) {
+      if (parsedActions && parsedActions.length > 0) {
+        for (const action of parsedActions) {
           try {
             if (action.type === 'new_workspace') {
               const newWsDoc = await databases.createDocument(DATABASE_ID, WORKSPACES_COLLECTION_ID, ID.unique(), {
