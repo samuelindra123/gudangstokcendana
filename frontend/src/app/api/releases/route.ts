@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const response = await fetch(
@@ -9,7 +11,7 @@ export async function GET() {
           'Accept': 'application/vnd.github.v3+json',
           ...(process.env.GITHUB_TOKEN && { 'Authorization': `token ${process.env.GITHUB_TOKEN}` }),
         },
-        next: { revalidate: 60 }, // Cache for only 1 minute to ensure fresh updates
+        cache: 'no-store', // Never cache this response so downloaded versions are instantly updated
       }
     );
 
