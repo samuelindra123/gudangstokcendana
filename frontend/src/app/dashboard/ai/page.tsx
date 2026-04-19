@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { account, databases, DATABASE_ID, ITEMS_COLLECTION_ID, LOGS_COLLECTION_ID, ID, Query } from '@/lib/appwrite';
+import { account, databases, DATABASE_ID, WORKSPACES_COLLECTION_ID, ITEMS_COLLECTION_ID, LOGS_COLLECTION_ID, ID, Query } from '@/lib/appwrite';
 import { Send, Bot, User, Sparkles, Loader2, Info } from 'lucide-react';
 import { askAI } from '@/app/actions/ai';
 
@@ -14,13 +14,14 @@ interface ChatMessage {
 
 export default function AIChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([{
-    id: '1', role: 'assistant', content: 'Halo kak! Saya AI Asisten Gudang Anda. Apa yang bisa saya bantu hari ini?\n\n(Contoh: "Aku tambahin stok beras kuning 10 karung" atau "Ada sisa kecap manis berapa?" atau "Kurangi stok telur 5 kg krn pecah")', timestamp: new Date()
+    id: '1', role: 'assistant', content: 'Halo kak! Saya AI Asisten Gudang Tercanggih. Saya sekarang bisa melihat workspace akun kamu.\n\nMau buat workspace baru? Atau cek dan sesuaikan stok di workspace tertentu? Beritahu saya!', timestamp: new Date()
   }]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const [user, setUser] = useState<any>(null);
+  const [workspacesInfo, setWorkspacesInfo] = useState<any[]>([]);
   const [itemsInfo, setItemsInfo] = useState<any[]>([]);
 
   useEffect(() => {
@@ -32,13 +33,36 @@ export default function AIChatPage() {
       try {
         const u = await account.get();
         setUser(u);
-        const res = await databases.listDocuments(DATABASE_ID, ITEMS_COLLECTION_ID, [Query.limit(500)]);
-        setItemsInfo(res.documents.map(d => ({
-          id: d.$id,
-          name: d.name,
-          quantity: d.quantity,
-          unit: d.unit || 'pcs'
-        })));
+        
+        // Fetch User's Workspaces
+        const wsRes = await databases.listDocuments(DATABASE_ID, WORKSPACES_COLLECTION_ID, [
+          Query.equal('ownerId', u.$id),
+          Query.limit(100)
+        ]);
+        const wsData = wsRes.documents.map((w: any) => ({
+          id: w.$id,
+          name: w.name
+        }));
+        setWorkspacesInfo(wsData);
+
+        // Fetch Items
+        const wsIds = wsData.map((w: any) => w.id);
+        if (wsIds.length > 0) {
+          const itemsRes = await databases.listDocuments(DATABASE_ID, ITEMS_COLLECTION_ID, [
+            Query.limit(1000)
+          ]);
+          // Filter items manually valid for user workspaces
+          const allItems = itemsRes.documents
+            .filter((d: any) => wsIds.includes(d.workspaceId))
+            .map((d: any) => ({
+              id: d.$id,
+              workspaceId: d.workspaceId,
+              name: d.name,
+              quantity: d.quantity,
+              unit: d.unit || 'pcs'
+            }));
+          setItemsInfo(allItems);
+        }
       } catch(e) {
         console.error('Failed loading db state', e);
       }
@@ -61,25 +85,39 @@ export default function AIChatPage() {
     setLoading(true);
 
     try {
-      const dbContext = JSON.stringify(itemsInfo);
+      const wsContext = JSON.stringify(workspacesInfo);
+      
+      const itemsContextData = itemsInfo.map(item => {
+        const ws = workspacesInfo.find(w => w.id === item.workspaceId);
+        return {
+          ...item,
+          workspaceName: ws ? ws.name : 'Unknown'
+        };
+      });
+      const dbContext = JSON.stringify(itemsContextData);
       
       const systemPrompt = `Anda adalah Asisten IT Profesional & Ramah untuk aplikasi Gudang Stok Cendana.
-Berikut adalah status stok gudang SAAT INI (sebagai database bayangan Anda): 
+Berikut adalah daftar WORKSPACE milik user:
+${wsContext}
+
+Berikut adalah status stok gudang SAAT INI berdasarkan workspace (database bayangan): 
 ${dbContext}
 
 Tugas Anda:
 1. Membaca pesan user.
-2. Memutuskan apakah harus MENAMBAH BARANG BARU (yg belum ada), MENGUBAH STOK BARU (barang yg sudah ada), atau HANYA MENJAWAB INFO/TANYA JAWAB.
-3. JANGAN berasumsi ID! Cari persis atau yang mirip dari daftar di atas. Jika user minta mengubah barang tapi namanya belum ada, tambah barang baru.
+2. Memutuskan apakah harus MEMBUAT WORKSPACE BARU, MENAMBAH BARANG BARU (yg belum ada di workspace target), MENGUBAH STOK BARANG (yg sudah ada di workspace), atau HANYA MENJAWAB INFO/TANYA JAWAB.
+3. JANGAN berasumsi ID! Cari persis dari daftar di atas. Jika user minta menambah/mengubah barang, PASTI-kan Anda tahu di workspace mana barang itu berada atau akan dibuat. Jika nama workspace tidak disebutkan oleh user dan user memiliki lebih dari 1 workspace, MINTA konfirmasi dari user terlebih dahulu, JANGAN langsung melakukan aksi tindakan.
+4. Jika user ingin membuat workspace baru, gunakan type "new_workspace".
 
-OUTPUT HARUS 100% JSON SAJA. TIDAK BOLEH ADA KODE MARKDOWN \`\`\`json. TIDAK BOLEH ADA TEKS LAIN.
-Struktur:
+OUTPUT HARUS 100% JSON SAJA. TIDAK BOLEH ADA KODE MARKDOWN. TIDAK BOLEH ADA TEKS LAIN.
+Struktur JSON yang WAJIB dicantumkan:
 {
-  "reply": "Respons ramah dalam bahasa Indonesia kepada user (Bantu jelaskan apa yang baru saja Anda lakukan ke database, atau jawab pertanyaan).",
+  "reply": "Respons ramah ke user. (Jika butuh konfirmasi, tanyakan di sini lalu array actions KOSONG).",
   "actions": [
-    // Isi jika ada DUA tipe aksi ini:
-    { "type": "new_item", "name": "Beras Kuning", "qty": 10, "unit": "kg" },
-    { "type": "adjust_stock", "id": "id barang di database dari tabel di atas", "diff": 5atau -5, "name": "Nama" }
+    // Isi JIKA ANDA YAKIN dengan workspace target dan user minta aksi mutasi database
+    { "type": "new_workspace", "name": "Gudang Utama" },
+    { "type": "new_item", "workspaceId": "id_workspace_didapat_dari_daftar", "name": "Beras Kuning", "qty": 10, "unit": "kg" },
+    { "type": "adjust_stock", "id": "id_barang_dari_tabel_items", "diff": 5, "name": "Beras Kuning" }
   ]
 }
 `;
@@ -93,39 +131,56 @@ Struktur:
       const res = await askAI(apiMessages);
       let jsonText = res.content.trim();
       
-      // Sanitasi Kimi terkadang memberikan MD
       if (jsonText.startsWith('```json')) jsonText = jsonText.substring(7);
       if (jsonText.startsWith('```')) jsonText = jsonText.substring(3);
       if (jsonText.endsWith('```')) jsonText = jsonText.substring(0, jsonText.length-3);
       
-      let parsed: any = { reply: 'Maaf, terjadi kesalahan parsing.', actions: [] };
+      let parsed: any = { reply: 'Maaf, terjadi kesalahan.', actions: [] };
       try {
           parsed = JSON.parse(jsonText);
       } catch(e) {
           console.error('Invalid JSON from AI:', jsonText);
-          parsed.reply = res.content; // fallback
+          parsed.reply = res.content; 
       }
       
       let aiReply = parsed.reply;
       
+      let workspacesList = [...workspacesInfo];
       let itemsList = [...itemsInfo];
 
       if (parsed.actions && parsed.actions.length > 0) {
         for (const action of parsed.actions) {
-          if (action.type === 'new_item') {
+          if (action.type === 'new_workspace') {
+            const newWsDoc = await databases.createDocument(DATABASE_ID, WORKSPACES_COLLECTION_ID, ID.unique(), {
+               name: action.name,
+               ownerId: user.$id
+            });
+            workspacesList.push({ id: newWsDoc.$id, name: action.name });
+
+            await databases.createDocument(DATABASE_ID, LOGS_COLLECTION_ID, ID.unique(), {
+               action: 'AI_WORKSPACE_BARU',
+               details: `Membuat Workspace Baru: ${action.name} (By AI)`,
+               userId: user?.$id || 'AI_SYSTEM',
+               userName: 'AI Assistant',
+               workspaceId: newWsDoc.$id
+            });
+          } else if (action.type === 'new_item') {
+            if (!action.workspaceId) continue;
             const newItemDoc = await databases.createDocument(DATABASE_ID, ITEMS_COLLECTION_ID, ID.unique(), {
+              workspaceId: action.workspaceId,
               name: action.name,
               quantity: action.qty,
               unit: action.unit || 'pcs',
               status: 'Baru (AI)'
             });
-            itemsList.push({ id: newItemDoc.$id, name: action.name, quantity: action.qty, unit: action.unit });
+            itemsList.push({ id: newItemDoc.$id, workspaceId: action.workspaceId, name: action.name, quantity: action.qty, unit: action.unit });
             
             await databases.createDocument(DATABASE_ID, LOGS_COLLECTION_ID, ID.unique(), {
                action: 'AI_BARANG_BARU',
-               details: `Barang Baru: ${action.qty} ${action.unit || 'pcs'} untuk item ${action.name} (By AI) [ITEM_ID:${newItemDoc.$id}]`,
+               details: `Barang Baru: ${action.qty} ${action.unit || 'pcs'} untuk item ${action.name} (By AI)`,
                userId: user?.$id || 'AI_SYSTEM',
-               userName: 'AI Assistant'
+               userName: 'AI Assistant',
+               workspaceId: action.workspaceId
             });
           } else if (action.type === 'adjust_stock') {
              const existing = itemsList.find(i => i.id === action.id);
@@ -140,13 +195,15 @@ Struktur:
                  const sign = action.diff > 0 ? '+' : '';
                  await databases.createDocument(DATABASE_ID, LOGS_COLLECTION_ID, ID.unique(), {
                    action: `AI_${actionCode}`,
-                   details: `${action.diff > 0 ? 'Menambah' : 'Mengurangi'} Stok: ${sign}${action.diff} ${existing.unit} untuk item ${existing.name} (By AI) [ITEM_ID:${existing.id}]`,
+                   details: `${action.diff > 0 ? 'Menambah' : 'Mengurangi'} Stok: ${sign}${action.diff} ${existing.unit} untuk item ${existing.name} (By AI)`,
                    userId: user?.$id || 'AI_SYSTEM',
-                   userName: 'AI Assistant'
+                   userName: 'AI Assistant',
+                   workspaceId: existing.workspaceId
                  });
              }
           }
         }
+        setWorkspacesInfo(workspacesList);
         setItemsInfo(itemsList);
       }
 
@@ -162,7 +219,7 @@ Struktur:
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
         role: 'assistant',
-        content: `Error: Gagal memproses permintaan (${err.message || 'Koneksi AI sibuk'}).`,
+        content: `Error: Gagal memproses permintaan AI.`,
         timestamp: new Date()
       }]);
     } finally {
@@ -178,7 +235,7 @@ Struktur:
             <Sparkles className="w-7 h-7 text-indigo-400 animate-pulse" />
             Gudang AI
           </h1>
-          <p className="text-zinc-500 text-sm mt-1">Mengotomatisasi tugas stok gudang dengan asisten cerdas.</p>
+          <p className="text-zinc-500 text-sm mt-1">Asisten cerdas yang tahu workspace dan stok gudang Anda.</p>
         </div>
         <div className="hidden sm:flex items-center gap-2 bg-indigo-500/10 text-indigo-400 px-3 py-1.5 rounded-full text-xs font-semibold border border-indigo-500/20">
           <Bot className="w-4 h-4" /> Kimi-k2.5
@@ -219,7 +276,7 @@ Struktur:
                   <Loader2 className="w-4 h-4 text-indigo-400 animate-spin" />
                </div>
                <div className="bg-white/[0.05] border border-white/10 rounded-2xl rounded-bl-none px-4 py-3 flex items-center gap-2">
-                 <span className="text-sm text-zinc-500 italic animate-pulse">Menghitung gudang...</span>
+                 <span className="text-sm text-zinc-500 italic animate-pulse">Berpikir dan menyinkronkan data...</span>
                </div>
              </div>
           )}
@@ -229,7 +286,7 @@ Struktur:
         <div className="p-3 border-t border-white/10 bg-black/40 relative z-10 backdrop-blur-md">
            <div className="flex items-center gap-2 px-3 py-1 mb-2">
               <Info className="w-3 h-3 text-amber-500" />
-              <span className="text-xs text-zinc-500">AI terhubung ke Database dan akan terekam Otomatis pada Log.</span>
+              <span className="text-xs text-zinc-500">AI ini terhubung ke multi-Workspace Anda secara real-time.</span>
            </div>
            <div className="flex gap-2 items-center">
               <input
@@ -237,7 +294,7 @@ Struktur:
                  value={input}
                  onChange={(e) => setInput(e.target.value)}
                  onKeyDown={(e) => { if(e.key === 'Enter') handleSend(); }}
-                 placeholder="Ketik instruksi masuk/keluar barang atau tanya stok..."
+                 placeholder="Cth: Bikin workspace 'Gudang B' lalu isi stok..."
                  className="flex-1 bg-white/5 border border-white/10 text-sm text-white px-4 py-3 rounded-xl outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all placeholder:text-zinc-600"
               />
               <button
