@@ -24,9 +24,6 @@
       "dist/**/*",
       "node_modules/**/*"
     ],
-    "directories": {
-      "buildResources": "assets"
-    },
     "win": {
       "target": [
         {
@@ -50,11 +47,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Gudang Stok Cendana",
-      "installerIcon": "assets/icon.ico",
-      "uninstallerIcon": "assets/icon.ico",
-      "installerHeaderIcon": "assets/icon.ico",
-      "license": "LICENSE.txt"
+      "shortcutName": "Gudang Stok Cendana"
     },
     "portable": {
       "artifactName": "${productName}-${version}-portable.exe"
