@@ -38,6 +38,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Activity className="h-4 w-4" />
             Activity Logs
           </Link>
+          <Link href="/dashboard/ai" className={navLinkClass('/dashboard/ai')}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-sparkles"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
+            Gudang AI
+          </Link>
           <Link href="/dashboard/telegram" className={navLinkClass('/dashboard/telegram')}>
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-bot"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
             Telegram Bot
@@ -78,6 +82,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           >
             <Activity className="h-5 w-5" />
             <span className="text-[10px] font-medium tracking-wide">Logs</span>
+          </Link>
+          <Link 
+            href="/dashboard/ai" 
+            className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${pathname === '/dashboard/ai' ? 'text-indigo-400' : 'text-zinc-500 hover:text-zinc-300'}`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-sparkles"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
+            <span className="text-[10px] font-medium tracking-wide">AI Assistant</span>
           </Link>
           <button 
             onClick={handleLogout}
