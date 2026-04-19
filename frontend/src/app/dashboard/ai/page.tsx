@@ -36,12 +36,14 @@ export default function AIChatPage() {
         
         // Fetch User's Workspaces
         const wsRes = await databases.listDocuments(DATABASE_ID, WORKSPACES_COLLECTION_ID, [
-          Query.equal('ownerId', u.$id),
           Query.limit(100)
         ]);
+        
+        // Use all workspaces that the user has access to, mirroring the main Dashboard
         const wsData = wsRes.documents.map((w: any) => ({
-          id: w.$id,
-          name: w.name
+            id: w.$id,
+            name: w.name,
+            ownerId: w.ownerId
         }));
         setWorkspacesInfo(wsData);
 
