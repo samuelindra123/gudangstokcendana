@@ -1,0 +1,83 @@
+{
+  "name": "gudang-stok-cendana",
+  "version": "1.0.0",
+  "description": "Desktop Application for Gudang Stok Cendana - Windows 10/11",
+  "main": "dist/main.js",
+  "homepage": "",
+  "author": "Gudang Stok Cendana",
+  "license": "ISC",
+  "scripts": {
+    "dev": "concurrently \"npm run build:watch\" \"wait-on tcp:3000 && electron .\"",
+    "start": "electron .",
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "dist": "npm run build && electron-builder",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:portable": "npm run build && electron-builder --win portable",
+    "dist:installer": "npm run build && electron-builder --win nsis",
+    "publish": "npm run build && electron-builder --win --publish always"
+  },
+  "build": {
+    "appId": "com.gudangstokcendana.desktop",
+    "productName": "Gudang Stok Cendana",
+    "files": [
+      "dist/**/*",
+      "node_modules/**/*"
+    ],
+    "directories": {
+      "buildResources": "assets"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "certificateFile": null,
+      "certificatePassword": null
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Gudang Stok Cendana",
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "installerHeaderIcon": "assets/icon.ico",
+      "license": "LICENSE.txt"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-portable.exe"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "samuelindra123",
+      "repo": "gudangstokcendana"
+    }
+  },
+  "dependencies": {
+    "axios": "^1.15.0",
+    "dotenv": "^17.4.2",
+    "electron-updater": "^6.1.0"
+  },
+  "devDependencies": {
+    "@types/electron": "^1.6.10",
+    "@types/node": "^20",
+    "concurrently": "^8.2.2",
+    "electron": "^30.0.0",
+    "electron-builder": "^25.0.0",
+    "electron-reloader": "^1.2.3",
+    "typescript": "^5.3.3",
+    "wait-on": "^7.0.1"
+  }
+}
