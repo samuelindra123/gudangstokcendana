@@ -139,9 +139,19 @@ Jika Anda HANYA menjawab/memberi info dan TIDAK ADA perintah perubahan mutasi, J
       let aiReply = fullContent;
       let parsedActions: any[] = [];
       const jsonBlockRegex = /```json\s*([\s\S]*?)```/;
-      const match = fullContent.match(jsonBlockRegex);
+      let match = fullContent.match(jsonBlockRegex);
       
-      if (match && match[1]) {
+      // If AI truncated the response due to max_tokens, try extracting unclosed JSON block
+      if (!match && fullContent.includes('```json')) {
+          const startIndex = fullContent.indexOf('```json') + 7;
+          const brokenJson = fullContent.substring(startIndex);
+          // remove the broken block from the UI
+          aiReply = fullContent.substring(0, fullContent.indexOf('```json')).trim() + '\n\n*(Catatan: Teks terpotong karena melebihi batas batas kapasitas)*';
+          try {
+             // Attempt a very desperate fix if it just missed the closing bracket
+             parsedActions = JSON.parse(brokenJson + ']'); 
+          } catch(e) { } // silent ignore
+      } else if (match && match[1]) {
           try {
               parsedActions = JSON.parse(match[1]);
               aiReply = fullContent.replace(jsonBlockRegex, '').trim();

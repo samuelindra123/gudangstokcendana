@@ -11,7 +11,7 @@ export async function askAI(messages: any[]) {
     const data = {
         model: "kimi-k2.5",
         messages: messages,
-        max_tokens: 800,
+        max_tokens: 3000,
         temperature: 0.2
     };
 
