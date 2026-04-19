@@ -9,7 +9,7 @@ export async function GET() {
           'Accept': 'application/vnd.github.v3+json',
           ...(process.env.GITHUB_TOKEN && { 'Authorization': `token ${process.env.GITHUB_TOKEN}` }),
         },
-        next: { revalidate: 3600 }, // Cache for 1 hour
+        next: { revalidate: 60 }, // Cache for only 1 minute to ensure fresh updates
       }
     );
 
